@@ -71,7 +71,6 @@
 // ========================================================  //
 
 #include "Model.h"
-#include "Structs.h"
 
 // Function list ================================================================================\\|
 //	Model specific function call functions:
