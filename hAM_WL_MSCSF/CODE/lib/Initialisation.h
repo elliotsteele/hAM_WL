@@ -73,13 +73,13 @@
 
 // Simulation settings functons
 void set_simulation_defaults(Simulation_parameters *sim, double dt);
-void set_simulation_settings(Simulation_parameters *sim, Argument_parameters A,  const char * Model_type);
+void set_simulation_settings(Simulation_parameters *sim, const Argument_parameters& A,  const char * Model_type);
 
 void create_output_files(std::ofstream& out1, const char *mkfile);
 
 // Model conditions
-void set_model_conditions(Cell_parameters *p, Argument_parameters A);
-void set_model_group_variables(Cell_parameters *p, Argument_parameters A);
+void set_model_conditions(Cell_parameters *p, const Argument_parameters& A);
+void set_model_group_variables(Cell_parameters *p, const Argument_parameters& A);
 void set_local_model_conditions(Cell_parameters p_in, Cell_parameters *p); // For tissue models only
 
 // Parameter defaults 
@@ -90,6 +90,6 @@ void initialise_measurement_variables(Model_variables *var);
 
 // Current modification variables
 void set_modification_defaults_native(Cell_parameters *p);
-void assign_modification_from_arguments(Cell_parameters *p, Argument_parameters A);
+void assign_modification_from_arguments(Cell_parameters *p, const Argument_parameters& A);
 
 #endif

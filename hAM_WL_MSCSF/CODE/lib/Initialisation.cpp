@@ -118,7 +118,7 @@ void set_simulation_defaults(Simulation_parameters *sim, double dt)
 }
 
 // Sets stim variables, model type etc dependant on input arguments
-void set_simulation_settings(Simulation_parameters *sim, Argument_parameters A, const char * Model_type)
+void set_simulation_settings(Simulation_parameters *sim, const Argument_parameters& A, const char * Model_type)
 {
 	// NOTE: throughout this function, native models are automatically set with no quiescnet period,
 	// whereas integrated models are set to 2000 ms quiescent period. Pass "Total_time" and "Paced_time"
@@ -198,7 +198,7 @@ void set_simulation_settings(Simulation_parameters *sim, Argument_parameters A, 
 // End simulation settings ======================================================================//|
 
 // Model conditions (Model type, remodelling etc) ===============================================\\|
-void set_model_conditions(Cell_parameters *p, Argument_parameters A)
+void set_model_conditions(Cell_parameters *p, const Argument_parameters& A)
 {
 	// Defaults
 	p->Model                = "hAM_WL_CRN";  
@@ -235,7 +235,7 @@ void set_model_conditions(Cell_parameters *p, Argument_parameters A)
 	p->tau_ss_type	= "slow";		// slowest/control -> argument overwriting done later as may also be celltype/remodelling dependent
 }
 
-void set_model_group_variables(Cell_parameters *p, Argument_parameters A)
+void set_model_group_variables(Cell_parameters *p, const Argument_parameters& A)
 {
 	// hAM specific settings
 	if (strcmp(p->Model, "hAM_CRN") == 0 || strcmp(p->Model, "hAM_GB") == 0 || strcmp(p->Model, "hAM_NG") == 0 || strcmp(p->Model, "hAM_MT") == 0 \
@@ -616,7 +616,7 @@ void set_modification_defaults_native(Cell_parameters *p)
 	p->IK1_Erev_shift			= 0.0;
 }
 
-void assign_modification_from_arguments(Cell_parameters *p, Argument_parameters A)
+void assign_modification_from_arguments(Cell_parameters *p, const Argument_parameters& A)
 {
 	// If the argument has been passed, set the parameters to the defined argument, else leave as defaults
 	if (A.GNa_arg		== true)	p->GNa		*= A.GNa;

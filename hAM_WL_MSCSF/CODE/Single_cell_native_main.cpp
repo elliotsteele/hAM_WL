@@ -66,15 +66,14 @@
 // ========================================================  //
 
 #include <fstream>
-#include <sstream>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <cstring>
-#include <time.h>
+#include <ctime>
+#include <filesystem>
 
 #include "lib/Arguments.h"
 #include "lib/Initialisation.h"
-#include "lib/Structs.h"
 #include "lib/Model.h"
 #include "lib/Read_write_state.h"
 #include "lib/Outputs.h"
@@ -111,16 +110,16 @@ int main(int argc, char *argv[])
 	// Command line argument initialise and read in =====\\|
 	// These functions populate Argin struct from command-line arguments 
 	// All in lib/Arguments.c
-	Argument_parameters Argin;									// Initialise struct 				
-	set_argument_defaults(&Argin);								// Sets all boolean switches to false 
-    call_argument_functions(argc, argv, &Argin, "Single_cell_native"); // Reads settings file and calls set args
+	auto Argin = std::make_unique<Argument_parameters>();
+	set_argument_defaults(Argin.get());								// Sets all boolean switches to false
+    call_argument_functions(argc, argv, Argin.get(), "Single_cell_native"); // Reads settings file and calls set args
 	// End Argument handling ============================//|
 
 	// Set and assign simulation settings ===============\\|
 	// Assigns Sim.{BCL, reference, Beats, Total_time, read/write_state, dt, ..} from Argin struct
 	Simulation_parameters Sim;									// Initialise sim parameters struct || lib/Structs.h
 	set_simulation_defaults(&Sim, 0.02);						// (sim struct, dt)					|| lib/Initialisation.c
-	set_simulation_settings(&Sim, Argin, "native");				// Set from arguments				|| lib/Initialisation.c
+	set_simulation_settings(&Sim, *Argin, "native");				// Set from arguments				|| lib/Initialisation.c
 	// End set and assign settings ======================//|
 
 	// Output files =====================================\\|
@@ -129,22 +128,24 @@ int main(int argc, char *argv[])
     char * results_dir  = (char*)malloc(500);
     char * res_dir_full = (char*)malloc(500); // full path including directory name
     char * params_dir   = (char*)malloc(500);
-	char * mkdirectory	= (char*)malloc(500);
 	char * mkfile		= (char*)malloc(500);
-	if (Argin.reference_arg == true) sprintf(directory, "Outputs_single_native_%s", Sim.reference);
+
+	if (Argin->reference_arg) sprintf(directory, "Outputs_single_native_%s", Sim.reference);
 	else sprintf(directory, "Outputs_single_native");
-	sprintf(mkdirectory, "mkdir -p %s", directory);
-	system(mkdirectory);
-    if (Argin.results_reference_arg == true) sprintf(results_dir, "Results_%s", Sim.results_reference);
+
+	std::filesystem::create_directories(directory);
+
+    if (Argin->results_reference_arg) sprintf(results_dir, "Results_%s", Sim.results_reference);
     else sprintf(results_dir, "Results");
-	sprintf(mkdirectory, "mkdir -p %s/%s", directory, results_dir);
-	system(mkdirectory);
     sprintf(res_dir_full, "%s/%s", directory, results_dir);
-    if (Argin.results_reference_arg == true) sprintf(params_dir, "%s/Parameters_%s", directory, Sim.results_reference);
+
+    std::filesystem::create_directories(res_dir_full);
+
+    if (Argin->results_reference_arg) sprintf(params_dir, "%s/Parameters_%s", directory, Sim.results_reference);
     else sprintf(params_dir, "%s/Parameters", directory);
-	sprintf(mkdirectory, "mkdir -p %s", params_dir);
-	system(mkdirectory);
-	
+
+    std::filesystem::create_directories(params_dir);
+
 	// Now create actual output files
 	printf(">Creating output files...\n");
 
@@ -158,7 +159,6 @@ int main(int argc, char *argv[])
 
 	printf("\n");
 	free(mkfile);
-	free(mkdirectory);
 	// End Output files =================================//|
 
 	// Initialise simulation structs and variables ======\\|
@@ -177,10 +177,10 @@ int main(int argc, char *argv[])
 	// Set model condition parameters from arguments | lib/Initialisation.c
 	// Sets Params.{Model, modulation(ISO,remodelling, mutation etc), model group} to defaults
 	// then overwrites with Argin values, if arguments have been passed 
-	set_model_conditions(&Params, Argin);
+	set_model_conditions(&Params, *Argin);
 
 	// Currently only sets human atrial flag to true if a human atrial model is set 
-    set_model_group_variables(&Params, Argin); // lib/Initialisation.c 
+    set_model_group_variables(&Params, *Argin); // lib/Initialisation.c
 
 	// Check Model is appropriate for this code version =\\|
 	// Add your new model clause here so it doesn't return an error
@@ -213,13 +213,13 @@ int main(int argc, char *argv[])
 	set_parameters_native(&Params, Params.Model);	// lib/Model.c and dependants (may set dt for model-specific)
 
 	// Set model condition params from arguments where passed; only for those which are set in set_parameters_native() to overwrite with argument value
-	if (Argin.Celltype_arg 	== true)	Params.Celltype 	= Argin.Celltype; 
-	if (Argin.ISO_model_arg == true)	Params.ISO_model 	= Argin.ISO_model; 
-	if (Argin.ACh_model_arg == true)    Params.ACh_model    = Argin.ACh_model; 
-	if (Argin.Ihyp_arg      == true)   	Params.AIhyp        = Argin.AIhyp;
+	if (Argin->Celltype_arg 	== true)	Params.Celltype 	= Argin->Celltype;
+	if (Argin->ISO_model_arg == true)	Params.ISO_model 	= Argin->ISO_model;
+	if (Argin->ACh_model_arg == true)    Params.ACh_model    = Argin->ACh_model;
+	if (Argin->Ihyp_arg      == true)   	Params.AIhyp        = Argin->AIhyp;
 
 	// Update Sim.dt if Params.dt has been explicitly set in "set_parameters" (thus Sim.dt != Params.dt), and dt has NOT been passed as a command-line argument.
-	if (Argin.dt_arg    	== false && Params.dt != Sim.dt) 	Sim.dt = Params.dt;
+	if (Argin->dt_arg    	== false && Params.dt != Sim.dt) 	Sim.dt = Params.dt;
 	printf(">Model and version specific parameters set\n");
 	// End set parameters (defaults and model specific) =//|
 
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
 	set_modification_defaults_native(&Params);		// lib/Initialisation.c
 
 	// lib/Initialisation.c || sets the mod variables (Gx, x_shift/tau_scale etc) from arguments 
-	assign_modification_from_arguments(&Params, Argin);
+	assign_modification_from_arguments(&Params, *Argin);
 	
 	// lib/Model.c  -> lib/Model_X.cp; calls functions which set modification variables for het and modulation
 	// Updates the modifier variables (scales, shifts etc) using the defined settings for any/all het and modulation
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 	// End initialise stimulus ==========================//|
 
 	// Output settings to screen and file || done here so can output actual settings (rather than inputs) for confidence
-    output_settings(Sim, res_dir_full, Argin.DC_current_mod_arg, Params, argc, argv);  // lib/Outputs.c
+    output_settings(Sim, res_dir_full, Argin->DC_current_mod_arg, Params, argc, argv);  // lib/Outputs.c
 
 	// Setup complete, simulation running ======\\|
 	time_t rawtime;
