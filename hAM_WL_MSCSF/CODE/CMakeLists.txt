@@ -1,32 +1,19 @@
 cmake_minimum_required(VERSION 3.17)
-project(CODE)
+project(hAM-WL)
 
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(lib)
 
-add_executable(CODE
-        lib/Arguments.cpp
-        lib/Arguments.h
-        lib/CRU.h
-        lib/Initialisation.cpp
-        lib/Initialisation.h
-        lib/Model.cpp
-        lib/Model.h
-        lib/Model_hAM_CRN.cpp
-        lib/Model_hAM_GB.cpp
-        lib/Model_hAM_MT.cpp
-        lib/Model_hAM_NG.cpp
-        lib/Model_hAM_WL.cpp
-        lib/Model_minimal.cpp
-        lib/Model_TEMPLATE.cpp
-        lib/Outputs.cpp
-        lib/Outputs.h
-        lib/Read_write_state.cpp
-        lib/Read_write_state.h
-        lib/Spatial_coupling.cpp
-        lib/Spatial_coupling.h
-        lib/Structs.h
-        lib/Tissue.cpp
-        lib/Tissue.h
-        Single_cell_native_main.cpp)
+file(GLOB LIB_SOURCES lib/*.cpp)
+file(GLOB LIB_HEADERS lib/*.h)
+add_library(hAM-WL-lib ${LIB_SOURCES} ${LIB_HEADERS})
+
+add_executable(single-cell-native Single_cell_native_main.cpp)
+target_link_libraries(single-cell-native hAM-WL-lib)
+
+add_executable(tissue-native Tissue_native_main.cpp)
+target_link_libraries(tissue-native hAM-WL-lib)
+
+add_executable(data-convert-binary-to-vtk-text-tissue Data_convert_binary_to_vtk_text_tissue.cpp)
+target_link_libraries(data-convert-binary-to-vtk-text-tissue hAM-WL-lib)
