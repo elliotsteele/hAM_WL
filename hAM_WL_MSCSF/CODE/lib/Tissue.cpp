@@ -64,13 +64,15 @@
 // 2. https://github.com/michaelcolman ====================  //
 // ========================================================  //
 
-#include <numbers>
 #include "Tissue.h"
 #include "Structs.h"
 #include "Spatial_coupling.h"
 #include <fstream>
 #include <stdlib.h>
 #include <string.h>
+
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 // Function list ================================================================================\\|
 //	Setup and tissue model
@@ -2291,11 +2293,11 @@ void create_phasemap_2D(int * phase, SC_variables sc, const char* Output_dir)
                 x = i - Cx;
                 y = j - Cy;
 
-                if (x == 0 && y >= 0) theta = 1.5*std::numbers::pi;//-M_PI/2;
-                else if (x == 0) theta = std::numbers::pi/2;
+                if (x == 0 && y >= 0) theta = 1.5*M_PI;//-M_PI/2;
+                else if (x == 0) theta = M_PI/2;
                 else theta = atan(y/x);
-                if (x <= 0) theta -= std::numbers::pi;
-                theta += 1.5*std::numbers::pi;
+                if (x <= 0) theta -= M_PI;
+                theta += 1.5*M_PI;
                 theta *= (100/3.15);///M_PI); // scales 0-> 2PI to 0->200
                 phase[cell_count] = (int)theta;//*(90/M_PI);   
                 if (phase[cell_count] >= 200) phase[cell_count] = 0;
@@ -2369,11 +2371,11 @@ void create_phasemap_3D(int * phase, SC_variables sc, const char* Output_dir)
                     x = i - Cx;
                     y = j - Cy;
 
-                    if (x == 0 && y >= 0) theta = 1.5*std::numbers::pi;//-M_PI/2;
-                    else if (x == 0) theta = std::numbers::pi/2;
+                    if (x == 0 && y >= 0) theta = 1.5*M_PI;//-M_PI/2;
+                    else if (x == 0) theta = M_PI/2;
                     else theta = atan(y/x);
-                    if (x <= 0) theta -= std::numbers::pi;
-                    theta += 1.5*std::numbers::pi;
+                    if (x <= 0) theta -= M_PI;
+                    theta += 1.5*M_PI;
                     theta *= (100/3.15);///M_PI); // scales 0-> 2PI to 0->200
                     phase[cell_count] = (int)theta;//*(90/M_PI);   
                     if (phase[cell_count] >= 200) phase[cell_count] = 0;
