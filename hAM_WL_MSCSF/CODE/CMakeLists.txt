@@ -19,10 +19,13 @@ add_executable(data-convert-binary-to-vtk-text-tissue Data_convert_binary_to_vtk
 target_link_libraries(data-convert-binary-to-vtk-text-tissue hAM-WL-lib)
 
 IF (WIN32)
-    set(gtkmm_DIR ${PROJECT_SOURCE_DIR})
-    find_package(gtkmm)
+    #set(gtkmm_DIR ${PROJECT_SOURCE_DIR})
+    #find_package(gtkmm)
 
     # TODO link to PLPLOT on windows
+
+    set(GTKMM_INCLUDE_DIR "")
+    set(PLPLOT_INCLUDE_DIR "")
 ELSE()
     find_package(PkgConfig)
     pkg_check_modules(GTKMM gtkmm-3.0)

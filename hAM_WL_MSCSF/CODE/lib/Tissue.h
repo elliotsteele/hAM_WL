@@ -71,14 +71,14 @@
 #include <math.h>
 
 // Set model and order
-void set_tissue_model_conditions(Tissue_parameters *t, Argument_parameters A);
+void set_tissue_model_conditions(Tissue_parameters *t, const Argument_parameters& A);
 
 // Set tissue setttings
 void set_tissue_settings_idealised(Cell_parameters p, Tissue_parameters *t);
 void set_tissue_settings_anatomical(Cell_parameters p, Tissue_parameters *t);
-void set_coord_stim_and_map_from_defined_type(Cell_parameters p, Tissue_parameters *t, Argument_parameters A);
-void overwrite_tissue_properties_from_args(Cell_parameters p, Tissue_parameters *t, Argument_parameters A);
-void set_global_orientation_direction_from_arg(Cell_parameters p, Tissue_parameters *t, Argument_parameters A);
+void set_coord_stim_and_map_from_defined_type(Cell_parameters p, Tissue_parameters *t, const Argument_parameters& A);
+void overwrite_tissue_properties_from_args(Cell_parameters p, Tissue_parameters *t, const Argument_parameters& A);
+void set_global_orientation_direction_from_arg(Cell_parameters p, Tissue_parameters *t, const Argument_parameters& A);
 
 // Array allocation and deallocation 
 void tissue_array_allocation(Tissue_parameters *t, int Ncell);

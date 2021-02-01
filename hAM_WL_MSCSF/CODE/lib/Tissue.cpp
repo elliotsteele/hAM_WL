@@ -64,6 +64,8 @@
 // 2. https://github.com/michaelcolman ====================  //
 // ========================================================  //
 
+#define _USE_MATH_DEFINES
+
 #include "Tissue.h"
 #include "Structs.h"
 #include "Spatial_coupling.h"
@@ -71,7 +73,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 
 // Function list ================================================================================\\|
@@ -117,7 +118,7 @@
 // End Function list ============================================================================//|
 
 // Set tissue model and type ====================================================================\\|
-void set_tissue_model_conditions(Tissue_parameters *t, Argument_parameters A)
+void set_tissue_model_conditions(Tissue_parameters *t, const Argument_parameters& A)
 {
 	// Defaults
 	t->Tissue_order		= "2D";				// Dimension of model; 1D-3D + geo
@@ -935,7 +936,7 @@ void set_tissue_settings_anatomical(Cell_parameters p, Tissue_parameters *t)
 // End Set tissue settings from model and type - ANATOMICAL =====================================//|
 
 // Set idealised coordiante stimulus parameters =================================================\\|
-void set_coord_stim_and_map_from_defined_type(Cell_parameters p, Tissue_parameters *t, Argument_parameters A)
+void set_coord_stim_and_map_from_defined_type(Cell_parameters p, Tissue_parameters *t, const Argument_parameters& A)
 {
     // These need to be here to unset "stim_set" if it has been set to true by the tissue model defaults but we want to overwrite whole shape with argument
     if (A.Stimulus_type_arg 	== true)    
@@ -1065,7 +1066,7 @@ void set_coord_stim_and_map_from_defined_type(Cell_parameters p, Tissue_paramete
 // End Set idealised coordiante stimulus parameters =============================================//|
 
 // Set global fibre orientation from arguments  =================================================\\|
-void set_global_orientation_direction_from_arg(Cell_parameters p, Tissue_parameters *t, Argument_parameters A)
+void set_global_orientation_direction_from_arg(Cell_parameters p, Tissue_parameters *t, const Argument_parameters& A)
 {
     if (A.Global_orientation_direction_arg == true) 
     {
@@ -1191,7 +1192,7 @@ void set_global_orientation_direction_from_arg(Cell_parameters p, Tissue_paramet
 // End Set global fibre orientation from arguments  =============================================//|
 
 // overwrite properties from arguments ==========================================================\\|
-void overwrite_tissue_properties_from_args(Cell_parameters p, Tissue_parameters *t, Argument_parameters A)
+void overwrite_tissue_properties_from_args(Cell_parameters p, Tissue_parameters *t, const Argument_parameters& A)
 {
     // Diffusion parameters
     if (A.D1_arg == true)       t->D1   = A.D1;

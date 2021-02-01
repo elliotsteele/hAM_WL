@@ -72,6 +72,7 @@
 #include <cstring>
 #include <time.h>
 #include <omp.h>
+#include <filesystem>
 
 #include "lib/Arguments.h"
 #include "lib/Initialisation.h"
@@ -114,16 +115,16 @@ int main(int argc, char *argv[])
 	// Command line argument initialise and read in =====\\|
 	// These functions populate Argin struct from command-line arguments 
 	// All in lib/Arguments.c
-	Argument_parameters Argin;                                  // Initialise struct
-	set_argument_defaults(&Argin);                              // Sets all boolean switches to false
-	call_argument_functions(argc, argv, &Argin, "Tissue_native"); // Reads settings file and calls set args
+	auto Argin = std::make_unique<Argument_parameters>();                                  // Initialise struct
+	set_argument_defaults(Argin.get());                              // Sets all boolean switches to false
+	call_argument_functions(argc, argv, Argin.get(), "Tissue_native"); // Reads settings file and calls set args
 	// End Argument handling ============================//|
 
 	// Set and assign simulation settings ===============\\|
 	// Assigns Sim.{BCL, reference, Beats, Total_time, read/write_state, dt, ..} from Argin struct
 	Simulation_parameters Sim;									// Initialise sim parameters struct || lib/Structs.h
 	set_simulation_defaults(&Sim, 0.02);						// (sim struct, dt)					|| lib/Initialisation.c
-	set_simulation_settings(&Sim, Argin, "native");				// Set from arguments				|| lib/Initialisation.c
+	set_simulation_settings(&Sim, *Argin, "native");				// Set from arguments				|| lib/Initialisation.c
 	// End set and assign settings ======================//|
 
 	// Output files =====================================\\|
@@ -134,19 +135,22 @@ int main(int argc, char *argv[])
 	char * sr_dir       = (char*)malloc(500);
 	char * mkdirectory	= (char*)malloc(500);
 	char * mkfile		= (char*)malloc(500);
-	if (Argin.reference_arg == true) sprintf(directory, "Outputs_tissue_native_%s", Sim.reference);
+
+	if (Argin->reference_arg) sprintf(directory, "Outputs_tissue_native_%s", Sim.reference);
 	else sprintf(directory, "Outputs_tissue_native");
-	sprintf(mkdirectory, "mkdir -p %s", directory);
-	system(mkdirectory);
-	if (Argin.results_reference_arg == true) sprintf(results_dir, "Results_%s", Sim.results_reference);
+
+    std::filesystem::create_directories(directory);
+
+	if (Argin->results_reference_arg) sprintf(results_dir, "Results_%s", Sim.results_reference);
 	else sprintf(results_dir, "Results");
-	sprintf(mkdirectory, "mkdir -p %s/%s", directory, results_dir);
-	system(mkdirectory);
     sprintf(res_dir_full, "%s/%s", directory, results_dir);
+
+    std::filesystem::create_directories(res_dir_full);
+
 	sprintf(sr_dir, "Spatial_%s", results_dir);
-	sprintf(mkdirectory, "mkdir -p %s/%s", directory, sr_dir);
-	system(mkdirectory);
-	
+
+	std::filesystem::create_directories(std::string{directory} + "/" + sr_dir);
+
 	// Now create actual output files
 	printf(">Creating output files...\n");
 
@@ -204,7 +208,7 @@ int main(int argc, char *argv[])
 	// Set model condition parameters from arguments | lib/Initialisation.c
 	// Sets Params.{Model, modulation(ISO,remodelling, mutation etc), model group} to defaults
 	// then overwrites with Argin values, if arguments have been passed
-	set_model_conditions(&Params_global, Argin); // Set Model, modulation (ISO, remodelling etc), environment to default or direct argument controlled
+	set_model_conditions(&Params_global, *Argin); // Set Model, modulation (ISO, remodelling etc), environment to default or direct argument controlled
 	// set_model_group_variables now below, after default model check
 
 	// Check Model is appropriate for this code version
@@ -227,7 +231,7 @@ int main(int argc, char *argv[])
 	// to default values, then assigns any from args (where passed in).
 	// Some of these define which conditions are selected in tissue setup; some are related to implementation
 	// at run time. Most can be overwritten by tissue model defaults and/or arguments
-	set_tissue_model_conditions(&Tissue, Argin);	// lib/Tissue.cpp
+	set_tissue_model_conditions(&Tissue, *Argin);	// lib/Tissue.cpp
 
 	// Set specific tissue settings (array sizes, diffusion and fibre parameters, stimulus coords and type etc)
 	// lib/Tissue.cpp
@@ -236,17 +240,17 @@ int main(int argc, char *argv[])
 
 	// Set model to tissue default unless Model argument is passed
 	// If Tissue.Default_model is "none", single cell default will be used
-	if (strcmp(Tissue.Default_model, "none") != 0 && Argin.Model_arg == false) Params_global.Model = Tissue.Default_model;
-	set_model_group_variables(&Params_global, Argin); // Model dependent so can't be called earlier || // lib/Initialisation.c
+	if (strcmp(Tissue.Default_model, "none") != 0 && !Argin->Model_arg) Params_global.Model = Tissue.Default_model;
+	set_model_group_variables(&Params_global, *Argin); // Model dependent so can't be called earlier || // lib/Initialisation.c
 
 	// set stimulus coord parameters from predefined type if not already defined by default, or if argument overwrites default
-	set_coord_stim_and_map_from_defined_type(Params_global, &Tissue, Argin); // lib/Tissue.cpp
+	set_coord_stim_and_map_from_defined_type(Params_global, &Tissue, *Argin); // lib/Tissue.cpp
 
 	// Set global orientation if ideal and set by directional argument (rather than explicitly and locally from file)
-	if (strcmp(Tissue.Tissue_order, "geo") != 0) set_global_orientation_direction_from_arg(Params_global, &Tissue, Argin); // lib/Tissue.cpp
+	if (strcmp(Tissue.Tissue_order, "geo") != 0) set_global_orientation_direction_from_arg(Params_global, &Tissue, *Argin); // lib/Tissue.cpp
 
 	// Set to arguments if expliticlty passed to overwite defaults (inc model specifc) || assuming you'd only pass an argument if you want it to be used!
-	overwrite_tissue_properties_from_args(Params_global, &Tissue, Argin); // lib/Tissue.cpp
+	overwrite_tissue_properties_from_args(Params_global, &Tissue, *Argin); // lib/Tissue.cpp
 
 	// set CV cell indexes -> location of cells for conduction velocity calculation, if CV tissue model is selected
 	if (strcmp(Tissue.Tissue_model, "conduction_velocity") == 0) set_CV_cells(Params_global, &Tissue);  // lib/Tissue.cpp
@@ -359,7 +363,7 @@ int main(int argc, char *argv[])
         printf(">Direct_modulation map read\n");
     }
     // Spatial gradient heterogneity
-    if (Argin.spatial_gradient_arg == true) Tissue.spatial_gradient_map_on = Argin.spatial_gradient; // else use default set by tissue model -> this is the gradient model to apply
+    if (Argin->spatial_gradient_arg) Tissue.spatial_gradient_map_on = Argin->spatial_gradient; // else use default set by tissue model -> this is the gradient model to apply
     if (strcmp(Tissue.spatial_gradient_map_on, "none") == 0) Tissue.spatial_gradient_map_on = "Off"; //will only = none if arg is set to none to turn it off
     if (strcmp(Tissue.spatial_gradient_map_on, "Off") != 0)
     {
@@ -412,19 +416,19 @@ int main(int argc, char *argv[])
 			}
         }
 		
-		set_model_group_variables(&Params[n], Argin); // Model dependent so needs to be called here (as Params[n].Model hmay have changed)
+		set_model_group_variables(&Params[n], *Argin); // Model dependent so needs to be called here (as Params[n].Model hmay have changed)
 
         // Set default parameters (constants etc); can be overwritten by model-specific later
         // Can be set now that local conditions (Model, ISO, Remodelling etc) have be set
 		set_parameters_native(&Params[n], Params[n].Model);							// lib/Model.c and dependants (may set dt for model-specific)
 
 		// Set model condition params from arguments where passed; only for those which are set in set_parameters_native() to overwrite with argument value
-        if (Argin.Celltype_arg 	== true)	Params[n].Celltype 	= Argin.Celltype; 	
-        if (Argin.ISO_model_arg == true)	Params[n].ISO_model	= Argin.ISO_model; 	
-        if (Argin.ACh_model_arg == true)    Params[n].ACh_model = Argin.ACh_model; 	
+        if (Argin->Celltype_arg)	Params[n].Celltype 	= Argin->Celltype;
+        if (Argin->ISO_model_arg)	Params[n].ISO_model	= Argin->ISO_model;
+        if (Argin->ACh_model_arg)   Params[n].ACh_model = Argin->ACh_model;
 
         // Update Sim.dt if Params.dt has been explicitly set in "set_parameters" (thus Sim.dt != Params.dt), and dt has NOT been passed as a command-line argument.
-        if (Argin.dt_arg    	== false && Params[n].dt != Sim.dt) 	Sim.dt = Params[n].dt;
+        if (!Argin->dt_arg && Params[n].dt != Sim.dt) 	Sim.dt = Params[n].dt;
         if (n == SC.N -1) printf(">Model and version specific parameters set\n");
         // End set parameters (defaults and model specific) =//|
 
@@ -434,9 +438,9 @@ int main(int argc, char *argv[])
         // If map is off, then simply update modifiers with argument values for all tissue; if map is on, do it only within map region
         if (strcmp(Tissue.Direct_modulation_map_on, "On") == 0) 
         {
-            if (Tissue.Direct_modulation_map[n] > 0.0) assign_modification_from_arguments(&Params[n], Argin); // lib/Initialisation.c || assign only to map area
+            if (Tissue.Direct_modulation_map[n] > 0.0) assign_modification_from_arguments(&Params[n], *Argin); // lib/Initialisation.c || assign only to map area
         }
-        else assign_modification_from_arguments(&Params[n], Argin);	// lib/Initialisation.c || assign to all nodes
+        else assign_modification_from_arguments(&Params[n], *Argin);	// lib/Initialisation.c || assign to all nodes
 
 		// Now set local celltype if heterogeneity is on (else all cells will be set to default or argument celltype)
 		// SC.geo_linear[n] = cellnumber at n; celltype_number[cellnumber] = string of celltype defined in Tissue model settings
@@ -470,8 +474,8 @@ int main(int argc, char *argv[])
 
     // Output settings to screen and file || done here so can output actual settings (rather than inputs) for confidence
     Params_global.Celltype = Params[0].Celltype;	// Just to output baseline model, independent of which model is in cell 0 if multi models used
-    assign_modification_from_arguments(&Params_global, Argin);					                // lib/Outputs.c
-    output_settings(Sim, res_dir_full, Argin.DC_current_mod_arg, Params_global, argc, argv);    // lib/Outputs.c
+    assign_modification_from_arguments(&Params_global, *Argin);					                // lib/Outputs.c
+    output_settings(Sim, res_dir_full, Argin->DC_current_mod_arg, Params_global, argc, argv);    // lib/Outputs.c
     output_settings_tissue(Sim, Tissue, res_dir_full);							                // lib/Outputs.c
 
     // Setup complete, simulation running ======\\|
